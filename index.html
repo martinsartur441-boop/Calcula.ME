@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora Tributária — ICMS, ISS, IBS e CBS</title>
+<style>
+:root{
+  --bg:#f5f7fb; --card:#fff; --text:#172033; --muted:#687386;
+  --primary:#2457d6; --primary2:#163d9f; --border:#dfe4ec;
+  --success:#16845b; --danger:#c53b3b; --shadow:0 10px 30px rgba(20,35,70,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:linear-gradient(135deg,#172b65,#2457d6);color:#fff;padding:34px 20px}
+.container{max-width:1180px;margin:auto;padding:0 18px}
+h1{margin:0 0 8px;font-size:30px}
+.subtitle{margin:0;color:#dbe5ff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+.card h2{font-size:18px;margin:0 0 18px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1/-1}
+label{font-size:13px;font-weight:700}
+input,select{width:100%;padding:11px 12px;border:1px solid #cfd6e2;border-radius:9px;background:#fff;color:var(--text);font-size:14px}
+input:focus,select:focus{outline:2px solid #cbd8ff;border-color:var(--primary)}
+.help{font-size:11px;color:var(--muted);line-height:1.35}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+button{border:0;border-radius:9px;padding:11px 16px;font-weight:800;cursor:pointer}
+.primary{background:var(--primary);color:#fff}.primary:hover{background:var(--primary2)}
+.secondary{background:#edf1f7;color:#25324a}
+.results{grid-column:1/-1}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi{padding:16px;border:1px solid var(--border);border-radius:12px;background:#fafbfe}
+.kpi .label{color:var(--muted);font-size:12px}
+.kpi .value{font-size:21px;font-weight:900;margin-top:5px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:12px 8px;border-bottom:1px solid var(--border);text-align:right;font-size:14px}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-size:12px}
+.total td{font-weight:900;font-size:16px;border-bottom:0}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#edf1ff;color:#244ba8;font-size:11px;font-weight:800}
+.note{background:#fff8df;border:1px solid #f1df9c;border-radius:10px;padding:12px;font-size:12px;line-height:1.45;color:#5c4b14;margin-top:15px}
+.footer{color:var(--muted);font-size:11px;padding:10px 0 30px;line-height:1.5}
+.hidden{display:none}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.results{grid-column:auto}}
+</style>
+</head>
+<body>
+<header>
+<div class="container">
+<h1>Calculadora Tributária</h1>
+<p class="subtitle">Simulação de ICMS, ISS, IBS e CBS — com seleção do ano da operação.</p>
+</div>
+</header>
+
+<main class="container">
+<div class="grid">
+<section class="card">
+<h2>1. Dados da operação</h2>
+<div class="form-grid">
+<div class="field">
+<label for="year">Ano da operação</label>
+<select id="year">
+<option value="2026" selected>2026</option>
+<option value="2027">2027</option>
+<option value="2028">2028</option>
+<option value="2029">2029</option>
+<option value="2030">2030</option>
+<option value="2031">2031</option>
+<option value="2032">2032</option>
+<option value="2033">2033</option>
+</select>
+</div>
+<div class="field">
+<label for="type">Tipo da operação</label>
+<select id="type">
+<option value="produto">Produto</option>
+<option value="servico">Serviço</option>
+<option value="mista">Mista</option>
+</select>
+</div>
+<div class="field">
+<label for="value">Valor da operação (R$)</label>
+<input id="value" type="number" min="0" step="0.01" value="1000">
+</div>
+<div class="field">
+<label for="freight">Frete / outras despesas (R$)</label>
+<input id="freight" type="number" min="0" step="0.01" value="0">
+</div>
+<div class="field">
+<label for="discount">Descontos (R$)</label>
+<input id="discount" type="number" min="0" step="0.01" value="0">
+</div>
+<div class="field">
+<label for="baseMode">Base simplificada</label>
+<select id="baseMode">
+<option value="normal">Valor + despesas − descontos</option>
+<option value="valueOnly">Somente valor da operação</option>
+</select>
+</div>
+</div>
+</section>
+
+<section class="card">
+<h2>2. Alíquotas</h2>
+<div class="form-grid">
+<div class="field">
+<label for="icms">ICMS (%)</label>
+<input id="icms" type="number" min="0" step="0.01" value="18">
+<span class="help">Informe a alíquota aplicável à operação.</span>
+</div>
+<div class="field">
+<label for="iss">ISS (%)</label>
+<input id="iss" type="number" min="0" step="0.01" value="5">
+<span class="help">Informe a alíquota aplicável ao serviço.</span>
+</div>
+<div class="field">
+<label for="ibs">IBS (%)</label>
+<input id="ibs" type="number" min="0" step="0.01" value="0.10">
+<span class="help" id="ibsHelp">Em 2026, a LC 214/2025 prevê 0,1% para o IBS.</span>
+</div>
+<div class="field">
+<label for="cbs">CBS (%)</label>
+<input id="cbs" type="number" min="0" step="0.01" value="0.90">
+<span class="help" id="cbsHelp">Em 2026, a LC 214/2025 prevê 0,9% para a CBS.</span>
+</div>
+<div class="field full">
+<label for="applyICMS">Aplicar ICMS</label>
+<select id="applyICMS">
+<option value="auto" selected>Automático pelo tipo da operação</option>
+<option value="yes">Sim</option>
+<option value="no">Não</option>
+</select>
+</div>
+<div class="field full">
+<label for="applyISS">Aplicar ISS</label>
+<select id="applyISS">
+<option value="auto" selected>Automático pelo tipo da operação</option>
+<option value="yes">Sim</option>
+<option value="no">Não</option>
+</select>
+</div>
+</div>
+<div class="actions">
+<button class="primary" id="calculate">Calcular</button>
+<button class="secondary" id="reset">Restaurar exemplo</button>
+</div>
+</section>
+
+<section class="card results">
+<h2>3. Resultado <span class="badge" id="yearBadge">2026</span></h2>
+<div class="summary">
+<div class="kpi"><div class="label">Base da simulação</div><div class="value" id="baseOut">R$ 0,00</div></div>
+<div class="kpi"><div class="label">Total de tributos</div><div class="value" id="taxOut">R$ 0,00</div></div>
+<div class="kpi"><div class="label">Carga sobre a base</div><div class="value" id="rateOut">0,00%</div></div>
+<div class="kpi"><div class="label">Valor + tributos</div><div class="value" id="grossOut">R$ 0,00</div></div>
+</div>
+<table>
+<thead><tr><th>Tributo</th><th>Base</th><th>Alíquota</th><th>Valor</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+<div class="note" id="transitionNote"></div>
+</section>
+</div>
+
+<div class="footer">
+<strong>Atenção:</strong> esta versão é uma calculadora de simulação e não substitui a apuração fiscal. Bases de cálculo, créditos, regimes específicos, benefícios fiscais, operações interestaduais, substituição tributária, regimes do Simples Nacional e demais particularidades podem alterar o resultado. As alíquotas devem ser conferidas para a operação concreta.
+</div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const money = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
+const pct = n => Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4}) + '%';
+
+function num(id){ return Math.max(0, Number($(id).value)||0); }
+
+function updateYearDefaults(){
+  const y = Number($('year').value);
+  if(y === 2026){
+    $('ibs').value = '0.10'; $('cbs').value = '0.90';
+    $('ibsHelp').textContent = '2026: alíquota do IBS de 0,1% na regra de transição.';
+    $('cbsHelp').textContent = '2026: alíquota da CBS de 0,9% na regra de transição.';
+  } else if(y === 2027 || y === 2028){
+    $('ibs').value = '0.10';
+    $('ibsHelp').textContent = '2027–2028: IBS de 0,1% na transição (0,05% estadual + 0,05% municipal).';
+    $('cbsHelp').textContent = 'A CBS deve ser informada conforme a alíquota aplicável vigente; não foi presumida.';
+  } else if(y >= 2029 && y <= 2032){
+    $('ibs').value = '0';
+    $('cbsHelp').textContent = 'Informe a alíquota aplicável à operação.';
+    $('ibsHelp').textContent = '2029–2032: o IBS entra na transição enquanto ICMS/ISS são reduzidos. Informe a alíquota de IBS que deseja simular.';
+  } else {
+    $('ibs').value = '0'; $('cbs').value = '0';
+    $('ibsHelp').textContent = '2033: novo modelo integral; informe a alíquota efetivamente aplicável.';
+    $('cbsHelp').textContent = '2033: informe a alíquota efetivamente aplicável.';
+  }
+  $('yearBadge').textContent = y;
+  calculate();
+}
+
+function applies(selectId, auto){
+  const v = $(selectId).value;
+  return v === 'yes' || (v === 'auto' && auto);
+}
+
+function calculate(){
+  const y = Number($('year').value);
+  const value = num('value');
+  const freight = num('freight');
+  const discount = num('discount');
+  const base = $('baseMode').value === 'normal'
+    ? Math.max(0, value + freight - discount) : value;
+
+  const type = $('type').value;
+  const autoICMS = type === 'produto' || type === 'mista';
+  const autoISS = type === 'servico' || type === 'mista';
+
+  const icmsRate = num('icms');
+  const issRate = num('iss');
+  const ibsRate = num('ibs');
+  const cbsRate = num('cbs');
+
+  const icms = applies('applyICMS', autoICMS) ? base * icmsRate/100 : 0;
+  const iss = applies('applyISS', autoISS) ? base * issRate/100 : 0;
+  const ibs = base * ibsRate/100;
+  const cbs = base * cbsRate/100;
+  const total = icms + iss + ibs + cbs;
+
+  $('baseOut').textContent = money(base);
+  $('taxOut').textContent = money(total);
+  $('rateOut').textContent = pct(base ? total/base*100 : 0);
+  $('grossOut').textContent = money(base + total);
+
+  const rows = [
+    ['ICMS', icms, icmsRate, applies('applyICMS', autoICMS)],
+    ['ISS', iss, issRate, applies('applyISS', autoISS)],
+    ['IBS', ibs, ibsRate, true],
+    ['CBS', cbs, cbsRate, true]
+  ];
+
+  $('rows').innerHTML = rows.map(r => `
+    <tr>
+      <td>${r[0]}${r[3] ? '' : ' <span class="badge">não aplicado</span>'}</td>
+      <td>${money(base)}</td>
+      <td>${pct(r[2])}</td>
+      <td>${money(r[1])}</td>
+    </tr>`).join('') +
+    `<tr class="total"><td>Total</td><td></td><td></td><td>${money(total)}</td></tr>`;
+
+  let note = '';
+  if(y === 2026){
+    note = '2026 é o ano de teste do IBS e da CBS. A Receita Federal informa que, cumpridas as obrigações acessórias, há dispensa do recolhimento do IBS/CBS em 2026; esta tela, porém, mostra o valor teórico destacado pela alíquota informada.';
+  } else if(y === 2027 || y === 2028){
+    note = '2027–2028: o IBS permanece em 0,1% na transição, enquanto a CBS segue a regra própria de fixação da alíquota. Por isso, a CBS é editável e não é presumida.';
+  } else if(y >= 2029 && y <= 2032){
+    note = `Em ${y}, ocorre a transição gradual de ICMS/ISS para o IBS. Esta calculadora não transforma automaticamente a alíquota de ICMS/ISS em uma alíquota legal de IBS; informe as alíquotas aplicáveis para a simulação.`;
+  } else {
+    note = '2033 marca a vigência integral do novo modelo, com extinção do ICMS e do ISS. Informe as alíquotas de IBS/CBS aplicáveis ao caso.';
+  }
+  $('transitionNote').textContent = note;
+}
+
+$('calculate').addEventListener('click', calculate);
+$('year').addEventListener('change', updateYearDefaults);
+['value','freight','discount','baseMode','type','icms','iss','ibs','cbs','applyICMS','applyISS'].forEach(id=>{
+  $(id).addEventListener('input', calculate);
+  $(id).addEventListener('change', calculate);
+});
+$('reset').addEventListener('click', ()=>{
+  $('year').value='2026'; $('type').value='produto'; $('value').value='1000';
+  $('freight').value='0'; $('discount').value='0'; $('baseMode').value='normal';
+  $('icms').value='18'; $('iss').value='5'; $('applyICMS').value='auto'; $('applyISS').value='auto';
+  updateYearDefaults();
+});
+updateYearDefaults();
+</script>
+</body>
+</html>
